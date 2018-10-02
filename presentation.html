@@ -131,7 +131,7 @@ $(document).ready(function () {
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>This document will serve as a tutorial for recreating <a href="https://areevesman.shinyapps.io/history/">this</a> shiny application. The application is a dashboard that allows users to explore Major League Baseball (MLB) data. When a user selects a team, year, and statistic they are interested in, the application renders a plot based on those values.</p>
-<p>We will touch on everything that went into making the app, like scraping the web and using plotly, but the focus will be on building the app itself.</p>
+<p>The tutorial will also touch on the web scraping that was necessary to gather the data.</p>
 </div>
 <div id="the-idea" class="section level2">
 <h2>The Idea</h2>
@@ -140,9 +140,19 @@ $(document).ready(function () {
 </div>
 <div id="first-step-gather-the-data" class="section level2">
 <h2>First Step: Gather the data</h2>
+<p>Two python scripts (in ipynb format) were created to scrape the data. They utilize the <code>bs4</code> (BeautifulSoup) module, which is explained in more detail and used for a similar purpose in this <a href="https://www.youtube.com/watch?v=BCJ4afDX4L4">youtube tutorial</a>. They live <a href="https://github.com/areevesman/MSDS610-Presentation/tree/master/scraping">here</a>.</p>
+<p>There is one script for the tables referenced above and there is one for <a href="https://www.baseball-reference.com/about/team_IDs.shtml">this</a> table.</p>
+<p>One csv file was saved for each table. Additional csv files were created by combining the tables for each team and adding some additional columns (discussed more later). The data files live <a href="https://github.com/areevesman/mlb_history_web_app/tree/master/data">here</a> and are named as “teamIDs.csv”, “STL2006.csv”, or “STL_all_years.csv”.</p>
 </div>
-<div id="define-global-variables-and-functions" class="section level2">
-<h2>Define Global Variables and Functions</h2>
+<div id="building-the-application" class="section level2">
+<h2>Building the application</h2>
+<p>According to <a href="https://shiny.rstudio.com/" class="uri">https://shiny.rstudio.com/</a>, “Shiny is an R package that makes it easy to build interactive web apps straight from R. You can host standalone apps on a webpage or embed them in R Markdown documents or build dashboards. You can also extend your Shiny apps with CSS themes, htmlwidgets, and JavaScript actions.” Many resources and tutorials can be found <a href="https://shiny.rstudio.com/tutorial/">here</a>. See this <a href="https://shiny.rstudio.com/gallery/">gallery</a> as well for help with implimentation of more specific features.</p>
+<p>There is one important piece of information to know before moving forward.</p>
+<p>Every application needs a user-interface definition and server logic. The user-interface controls how the application looks and the server logic controls what the application does.</p>
+<p>In addition to the <code>ui</code> and <code>server</code> scripts, I have included a script to define global functions and variables.</p>
+<div id="define-global-variables-and-functions" class="section level3">
+<h3>Define Global Variables and Functions</h3>
+<p>This code gets saved into a script called <code>global.R</code>.</p>
 <pre class="r"><code>library(shiny)
 library(shinythemes)
 library(RCurl)
@@ -233,13 +243,26 @@ select_stat_choices &lt;- list(&quot;Record&quot; = &quot;record_so_far&quot;,
                             &quot;Cumulative Runs Allowed&quot; = &quot;ra_so_far&quot;,
                             &quot;Cumulative Run Differential&quot; = &quot;rd_so_far&quot;)</code></pre>
 </div>
-<div id="defining-the-user-interface-and-server-logic" class="section level2">
-<h2>Defining the User-Interface and Server Logic</h2>
-<p>Adding this code to the user-interface definition will define the layout of the app and create a select box for team. The <code>uiOutput(&quot;team&quot;)</code> will correspond to an <code>output$team</code> object in the server logic.</p>
+<div id="defining-the-user-interface-and-server-logic" class="section level3">
+<h3>Defining the User-Interface and Server Logic</h3>
+<p>Adding this code to the <strong>user-interface</strong> definition will define the layout of the app and create a select box for team. The <code>uiOutput(&quot;team&quot;)</code> will correspond to an <code>output$team</code> object in the server logic.</p>
 <pre class="r"><code>  fluidPage(
     
     #select theme
     theme = shinytheme(&quot;yeti&quot;),
+    
+    # Application title
+    titlePanel(&quot;A History of Major League Baseball's Active Franchises&quot;),
+    
+    p(&quot;You can use this application to examine various performance metrics of Major League Baseball teams. Just select a &quot;, 
+      strong(&quot;Team,&quot;),
+      strong(&quot;Year&quot;),
+      &quot; and the &quot;, 
+      strong(&quot;Statistic&quot;) ,&quot; of interest.&quot;),
+    
+    p('Click the &quot;Play Animation&quot; button in the ', strong('Year'), ' section to see how performance changes over multiple years.'),
+    
+    p(&quot;Use the buttons in the top-right corner of the plot for a closer look.&quot;),
     
     # select layout 
     verticalLayout(
@@ -260,7 +283,7 @@ select_stat_choices &lt;- list(&quot;Record&quot; = &quot;record_so_far&quot;,
     )
     
   )</code></pre>
-<p>Adding the following code to the server logic will render make the app render the slider once a team is selected.</p>
+<p>Adding the following code to the <strong>server</strong> logic will render make the app render the slider once a team is selected.</p>
 <pre class="r"><code>  #first year in mlb for selected team
   start_year &lt;- reactive({
     as.numeric(teamIDs[which(teamIDs$Team_ID == input$select_team), &quot;First_Year&quot;][[1,1]])
@@ -281,7 +304,7 @@ select_stat_choices &lt;- list(&quot;Record&quot; = &quot;record_so_far&quot;,
                 animate = animationOptions(interval = 900, 
                                            playButton = &quot;Play Animation&quot;))
   })</code></pre>
-<p>We can finish the user-interface definition with a select box for the statistic and the <code>plotlyOutput</code> call to create a select box for the statistic and to tell the server to create a plot.</p>
+<p>We can finish the <strong>user-interface</strong> definition with a select box for the statistic and the <code>plotlyOutput</code> call to create a select box for the statistic and to tell the server to create a plot.</p>
 <pre class="r"><code>#select box for statistic
 selectInput(&quot;select_stat&quot;, 
             label = h3(&quot;Statistic&quot;),
@@ -290,7 +313,7 @@ selectInput(&quot;select_stat&quot;,
 
 #will tell server to render plotly object
 plotlyOutput(&quot;detailed_plot&quot;)</code></pre>
-<p>This code completes the server logic to reder a plot that is specific to the team, year, and statistic of interest.</p>
+<p>This code completes the <strong>server</strong> logic to reder a plot that is specific to the team, year, and statistic of interest.</p>
 <pre class="r"><code>  #get a team's data over all years as a tibble
   team_all_years &lt;- reactive({
     combine_years(input$select_team)
@@ -352,8 +375,11 @@ plotlyOutput(&quot;detailed_plot&quot;)</code></pre>
     
   })</code></pre>
 </div>
-<div id="server" class="section level2">
-<h2>Server</h2>
+</div>
+<div id="publishing-the-application" class="section level2">
+<h2>Publishing the application</h2>
+<p>Shiny apps are easy to share and the free version of <a href="http://www.shinyapps.io/">shinyapps.io</a> was used for this project.</p>
+<p>A more comprehensive outline of ways to share shiny apps is given <a href="https://shiny.rstudio.com/tutorial/written-tutorial/lesson7/">here</a>.</p>
 </div>
 
 

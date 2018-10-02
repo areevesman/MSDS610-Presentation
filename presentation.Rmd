@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = T, eval=F)
 
 This document will serve as a tutorial for recreating [this](https://areevesman.shinyapps.io/history/) shiny application. The application is a dashboard that allows users to explore Major League Baseball (MLB) data. When a user selects a team, year, and statistic they are interested in, the application renders a plot based on those values. 
 
-We will touch on everything that went into making the app, like scraping the web and using plotly, but the focus will be on building the app itself.
+The tutorial will also touch on the web scraping that was necessary to gather the data.
 
 ## The Idea
 
@@ -28,9 +28,26 @@ The application will synthesize that data for every current MLB team, for all of
 
 ## First Step: Gather the data
 
-Two python scripts (in ipynb format) were created to scrape the data. They utilize the `bs4` (BeautifulSoup) module, which is explained in more detail and used for a similar purpose in this [youtube tutorial](https://www.youtube.com/watch?v=BCJ4afDX4L4). They live [here]().
+Two python scripts (in ipynb format) were created to scrape the data. They utilize the `bs4` (BeautifulSoup) module, which is explained in more detail and used for a similar purpose in this [youtube tutorial](https://www.youtube.com/watch?v=BCJ4afDX4L4). They live [here](https://github.com/areevesman/MSDS610-Presentation/tree/master/scraping).
 
-## Define Global Variables and Functions
+There is one script for the tables referenced above and there is one for [this](https://www.baseball-reference.com/about/team_IDs.shtml) table.
+
+One csv file was saved for each table. Additional csv files were created by combining the tables for each team and adding some additional columns (discussed more later). 
+The data files live [here](https://github.com/areevesman/mlb_history_web_app/tree/master/data) and are named as "teamIDs.csv", "STL2006.csv", or "STL_all_years.csv".
+
+## Building the application
+
+According to https://shiny.rstudio.com/, "Shiny is an R package that makes it easy to build interactive web apps straight from R. You can host standalone apps on a webpage or embed them in R Markdown documents or build dashboards. You can also extend your Shiny apps with CSS themes, htmlwidgets, and JavaScript actions." Many resources and tutorials can be found [here](https://shiny.rstudio.com/tutorial/). See this [gallery](https://shiny.rstudio.com/gallery/) as well for help with implimentation of more specific features.
+
+There is one important piece of information to know before moving forward.
+
+Every application needs a user-interface definition and server logic. The user-interface controls how the application looks and the server logic controls what the application does.
+
+In addition to the `ui` and `server` scripts, I have included a script to define global functions and variables.
+
+### Define Global Variables and Functions
+
+This code gets saved into a script called `global.R`.
 
 ```{r}
 library(shiny)
@@ -128,15 +145,28 @@ select_stat_choices <- list("Record" = "record_so_far",
 
 ```
 
-## Defining the User-Interface and Server Logic
+### Defining the User-Interface and Server Logic
 
-Adding this code to the user-interface definition will define the layout of the app and create a select box for team. The `uiOutput("team")` will correspond to an `output$team` object in the server logic.
+Adding this code to the **user-interface** definition will define the layout of the app and create a select box for team. The `uiOutput("team")` will correspond to an `output$team` object in the server logic.
 
 ```{r}
   fluidPage(
     
     #select theme
     theme = shinytheme("yeti"),
+    
+    # Application title
+    titlePanel("A History of Major League Baseball's Active Franchises"),
+    
+    p("You can use this application to examine various performance metrics of Major League Baseball teams. Just select a ", 
+      strong("Team,"),
+      strong("Year"),
+      " and the ", 
+      strong("Statistic") ," of interest."),
+    
+    p('Click the "Play Animation" button in the ', strong('Year'), ' section to see how performance changes over multiple years.'),
+    
+    p("Use the buttons in the top-right corner of the plot for a closer look."),
     
     # select layout 
     verticalLayout(
@@ -159,7 +189,7 @@ Adding this code to the user-interface definition will define the layout of the 
   )
 ```
 
-Adding the following code to the server logic will render make the app render the slider once a team is selected.
+Adding the following code to the **server** logic will render make the app render the slider once a team is selected.
 
 ```{r}
   #first year in mlb for selected team
@@ -185,7 +215,7 @@ Adding the following code to the server logic will render make the app render th
 ```
 
 
-We can finish the user-interface definition with a select box for the statistic and the `plotlyOutput` call to create a select box for the statistic and to tell the server to create a plot.
+We can finish the **user-interface** definition with a select box for the statistic and the `plotlyOutput` call to create a select box for the statistic and to tell the server to create a plot.
 
 ```{r}
 #select box for statistic
@@ -198,7 +228,7 @@ selectInput("select_stat",
 plotlyOutput("detailed_plot")
 ```
 
-This code completes the server logic to reder a plot that is specific to the team, year, and statistic of interest.
+This code completes the **server** logic to reder a plot that is specific to the team, year, and statistic of interest.
 
 ```{r}
   #get a team's data over all years as a tibble
@@ -263,165 +293,8 @@ This code completes the server logic to reder a plot that is specific to the tea
   })
 ```
 
+## Publishing the application
 
-```{r, include=F}
-# Define UI for application
-shinyUI(fluidPage(
-  
-  #select theme
-  theme = shinytheme("yeti"),
-                  
-  
-  # Application title
-  titlePanel("A History of Major League Baseball's Active Franchises"),
-  
-  p("You can use this application to examine various performance metrics of Major League Baseball teams. Just select a ", 
-    strong("Team,"),
-    strong("Year"),
-    " and the ", 
-    strong("Statistic") ," of interest."),
-  
-  p('Click the "Play Animation" button in the ', strong('Year'), ' section to see how performance changes over multiple years.'),
-  
-  p("Use the buttons in the top-right corner of the plot for a closer look."),
-  
+Shiny apps are easy to share and the free version of [shinyapps.io](http://www.shinyapps.io/) was used for this project.
 
-  
-  # select layout 
-  verticalLayout(
-    
-    # create panel with a select box for team
-    wellPanel(
-      
-      #select box for team
-      selectInput("select_team", 
-                  label = h3("Team"), 
-                  choices = team_choices, 
-                  selected = team_choices[1]),
-      
-      #tell server to render more some ui (for slider box)
-      uiOutput("team"),
-    
-      #select box for statistic
-      selectInput("select_stat", 
-                  label = h3("Statistic"),
-                  choices = select_stat_choices,
-                  selected = "Runs"),
-      
-      #will tell server to render plotly object
-      plotlyOutput("detailed_plot")
-      
-      #for debugging purposes
-      ,textOutput("test_print")
-    )
-  )
-))
-```
-
-## Server
-
-```{r,include=F}
-# Define server logic 
-shinyServer(function(input, output) {
-  
-  
-  
-  #first year in mlb for selected team
-  start_year <- reactive({
-    as.numeric(teamIDs[which(teamIDs$Team_ID == input$select_team), "First_Year"][[1,1]])
-  })
-  
-  
-  #server will render some ui corresponding to "team" (slider box)
-  output$team <- renderUI({
-    
-    sliderInput("slider", 
-                label = h3("Year"), 
-                min = start_year(), 
-                max = 2017, 
-                value = start_year(),
-                sep = "",
-                round = TRUE,
-                step = 1,
-                animate = animationOptions(interval = 900, 
-                                           playButton = "Play Animation"))
-    #animate = TRUE)
-  })
-  
-  
-  
-  
-  
-  #number of years team has been around
-  # num_years <- reactive({
-  #   2018 - start_year()
-  # })
-  
-  
-  #get a team's data over all years as a tibble
-  team_all_years <- reactive({
-    combine_years(input$select_team)
-  })
-  
-  #get limits for plot
-  limit_data <- reactive({
-    
-    stat <- input$select_stat
-    #get min and max for stat over all years
-    var <- team_all_years()[,c("year", stat)] %>%
-      mutate_all(function(col){ 
-        col[is.na(col)] <- "0"
-        col <- as.numeric(col)
-        col}) %>%
-      summarise(minimum = min(as.numeric(eval(parse(text = input$select_stat))), na.rm = TRUE),
-                maximum = max(as.numeric(eval(parse(text = input$select_stat))), na.rm = TRUE)) 
-    
-    
-    #lower and upper bound for plot y-axis limits
-    c(var[[1,"minimum"]], 1.1*var[[1,"maximum"]])
-    
-  })
-  
-  
-  
-  #for plotly
-  team_year_data <- reactive({
-    get_csv_by_name(paste(input$select_team,
-                           input$slider,
-                           ".csv",
-                           sep="")) %>%
-      add_columns(year = input$slider)
-  })
-  
-  
-  
-  #render the plotly object
-  output$detailed_plot <- renderPlotly({
-    
-    x <- 1:nrow(team_year_data())
-    y <- team_year_data()[[input$select_stat]]
-    hover <- paste(team_year_data()[["date"]], "\n",
-                   team_year_data()[["who_and_where"]], "\n",
-                   "Score: ", team_year_data()[["runs"]], "-", team_year_data()[["runs_allowed"]],
-                   ", ", team_year_data()[["winner"]], "\n",
-                   sep = '')
-    
-    team_year_data() %>%
-      plot_ly(x = ~x,
-              y = ~y, 
-              hovertext = hover,
-              hoverinfo = "text",
-              type = 'scatter', 
-              mode = 'lines+markers') %>%
-      layout(xaxis = list(title = "Game Number in Season"),
-             yaxis = list(title = names(select_stat_choices[select_stat_choices==input$select_stat]),
-                          range = limit_data()))
-    
-  })
-  
-  
-  
-})
-
-```
-
+A more comprehensive outline of ways to share shiny apps is given [here](https://shiny.rstudio.com/tutorial/written-tutorial/lesson7/).
