@@ -7,15 +7,9 @@ library(stringr)
 library(ggplot2)
 library(plotly)
 
-
-
-
-
-
 ### Functions to interact with github reposity and manipulate data ###
 
 data_folder <- "https://raw.githubusercontent.com/areevesman/mlb_app_edits/master/data/"
-
 
 
 #read in a csv file by name from data_url
@@ -58,13 +52,10 @@ add_columns <- function(original_team_data, year){
 }
 
 
-
 #get one team's csv's over all years in one csv
 combine_years <- function(team, start_year){
   return(get_csv_by_name(paste(team, "_all_years.csv", sep="")))
 }
-
-
 
 
 
@@ -75,6 +66,7 @@ teamIDs <- teamIDs[c(2:14,1,15:nrow(teamIDs)),]
 
 
 
+### Define Global Variables ###
 
 #all mlb teams (as "STL")
 team_choices <- teamIDs$Team_ID

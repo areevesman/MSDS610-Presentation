@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = T, eval=F)
 ```
-
+[https://github.com/areevesman/MSDS610-Presentation](https://github.com/areevesman/MSDS610-Presentation)
 <center>
 ![](shiny.png)
 </center>
@@ -22,7 +22,7 @@ The tutorial will also touch on the web scraping that was necessary to gather th
 
 ## The Idea
 
-[baseball-reference.com](http://www.baseball-reference.com) is a website that hosts an unimaginable amount of baseball statistics. In particular, it has [these](https://www.baseball-reference.com/teams/STL/1960-schedule-scores.shtml) tables that record ceratain aspects of every regular season game for a given team and specific year.
+[baseball-reference.com](http://www.baseball-reference.com) is a website that hosts a ridiculous amount of baseball statistics. In particular, it has [these](https://www.baseball-reference.com/teams/STL/1960-schedule-scores.shtml) tables that record certain aspects of every regular season game for a given team and specific year.
 
 The application will synthesize that data for every current MLB team, for all of the years they have exsited (under that name).
 
